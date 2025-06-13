@@ -74,17 +74,19 @@ def download_csv(df, filename):
 # TRENDING TOPICS (Realtime)
 # =====================
 if menu == "Trending Topics":
-    st.header(f"🔥 Trending Realtime di {lokasi}")
+    st.header(f"🔥 Trending Hari Ini di {lokasi}")
     if geo_code == "":
         try:
+            # Gunakan nama negara dalam huruf kecil (bukan kode ISO)
             trending = pytrends.realtime_trending_searches(pn='indonesia')
             topik = trending[['title', 'entityNames', 'traffic']].head(10)
             st.dataframe(topik, use_container_width=True)
             download_csv(topik, "trending_indonesia.csv")
         except Exception as e:
-            st.error(f"Gagal memuat data trending: {e}")
+            st.error(f"⚠️ Gagal memuat data trending: {e}")
     else:
-        st.info("Google Trends realtime hanya tersedia untuk tingkat nasional. Gunakan menu 'Interest Over Time' untuk data provinsi.")
+        st.info("🔒 Trending Realtime hanya tersedia untuk nasional. Gunakan fitur lain untuk provinsi.")
+
 
 # =====================
 # INTEREST OVER TIME
