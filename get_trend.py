@@ -77,7 +77,7 @@ if menu == "Trending Topics":
     st.header(f"🔥 Trending Realtime di {lokasi}")
     if geo_code == "":
         try:
-            trending = pytrends.realtime_trending_searches(pn='ID')
+            trending = pytrends.realtime_trending_searches(pn='indonesia')
             topik = trending[['title', 'entityNames', 'traffic']].head(10)
             st.dataframe(topik, use_container_width=True)
             download_csv(topik, "trending_indonesia.csv")
