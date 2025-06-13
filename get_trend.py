@@ -1,7 +1,6 @@
 import streamlit as st
 from pytrends.request import TrendReq
 import pandas as pd
-from io import BytesIO
 
 # Konfigurasi halaman Streamlit
 st.set_page_config(page_title="Google Trends Regional", layout="wide")
@@ -72,16 +71,20 @@ def download_csv(df, filename):
     )
 
 # =====================
-# TRENDING TOPICS
+# TRENDING TOPICS (Realtime)
 # =====================
 if menu == "Trending Topics":
-    st.header(f"🔥 Trending Pencarian di {lokasi}")
+    st.header(f"🔥 Trending Realtime di {lokasi}")
     if geo_code == "":
-        trending = pytrends.trending_searches(pn='indonesia')
-        st.dataframe(trending, use_container_width=True)
-        download_csv(trending.rename(columns={0: "Topik"}), f"trending_{lokasi.lower()}.csv")
+        try:
+            trending = pytrends.realtime_trending_searches(pn='ID')
+            topik = trending[['title', 'entityNames', 'traffic']].head(10)
+            st.dataframe(topik, use_container_width=True)
+            download_csv(topik, "trending_indonesia.csv")
+        except Exception as e:
+            st.error(f"Gagal memuat data trending: {e}")
     else:
-        st.info("Google Trends belum menyediakan fitur real-time trending untuk provinsi. Coba gunakan menu 'Interest Over Time'.")
+        st.info("Google Trends realtime hanya tersedia untuk tingkat nasional. Gunakan menu 'Interest Over Time' untuk data provinsi.")
 
 # =====================
 # INTEREST OVER TIME
@@ -92,15 +95,18 @@ elif menu == "Interest Over Time":
 
     if keyword_input:
         keywords = [kw.strip() for kw in keyword_input.split(',')]
-        pytrends.build_payload(keywords, geo=geo_code, timeframe='now 7-d')
-        data = pytrends.interest_over_time()
+        try:
+            pytrends.build_payload(keywords, geo=geo_code, timeframe='now 7-d')
+            data = pytrends.interest_over_time()
 
-        if not data.empty:
-            st.line_chart(data[keywords])
-            st.dataframe(data.reset_index(), use_container_width=True)
-            download_csv(data.reset_index(), f"trend_{lokasi.lower()}.csv")
-        else:
-            st.warning("Data tidak ditemukan. Coba kata kunci atau lokasi lain.")
+            if not data.empty:
+                st.line_chart(data[keywords])
+                st.dataframe(data.reset_index(), use_container_width=True)
+                download_csv(data.reset_index(), f"trend_{lokasi.lower().replace(' ', '_')}.csv")
+            else:
+                st.warning("Data tidak ditemukan. Coba kata kunci atau lokasi lain.")
+        except Exception as e:
+            st.error(f"Terjadi error saat mengambil data: {e}")
 
 # =====================
 # RELATED TOPICS
@@ -110,15 +116,18 @@ elif menu == "Related Topics":
     keyword = st.text_input("Masukkan satu kata kunci utama:", value="Pemilu")
 
     if keyword:
-        pytrends.build_payload([keyword], geo=geo_code, timeframe='now 7-d')
-        related = pytrends.related_queries()
+        try:
+            pytrends.build_payload([keyword], geo=geo_code, timeframe='now 7-d')
+            related = pytrends.related_queries()
 
-        if related.get(keyword) and related[keyword]['rising'] is not None:
-            df_rising = related[keyword]['rising']
-            st.dataframe(df_rising, use_container_width=True)
-            download_csv(df_rising, f"related_topics_{keyword.lower()}_{lokasi.lower()}.csv")
-        else:
-            st.info("Tidak ada data topik naik daun untuk kata kunci ini.")
+            if related.get(keyword) and related[keyword]['rising'] is not None:
+                df_rising = related[keyword]['rising']
+                st.dataframe(df_rising, use_container_width=True)
+                download_csv(df_rising, f"related_{keyword.lower()}_{lokasi.lower().replace(' ', '_')}.csv")
+            else:
+                st.info("Tidak ada data topik naik daun untuk kata kunci ini.")
+        except Exception as e:
+            st.error(f"Gagal memuat data: {e}")
 
 # Footer
 st.markdown("---")
